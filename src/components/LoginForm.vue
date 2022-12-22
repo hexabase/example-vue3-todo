@@ -2,8 +2,10 @@
 import { reactive, ref } from "vue";
 import { useHexabaseStore } from "../stores/hexabase";
 import type { FormInstance } from "element-plus";
+// Store
 const store = useHexabaseStore();
 
+// Form instance and inputs
 const formRef = ref<FormInstance>();
 const authForm = reactive<{
   email: string;

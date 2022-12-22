@@ -16,11 +16,20 @@ export const useHexabaseStore = defineStore("hexabase", () => {
   const login = ref(client.tokenHxb !== "");
   // Set user info, if there is a token
   const currentUser = ref<UserInfo | null>(null);
+
+  // Hexabase project and datastore IDs
+  const projectId = PROJECT_ID;
+  const datastoreId = DATASTORE_ID;
+
+  // Datastore items
+  const items = ref<any[]>([]);
+
   if (value !== "") {
     client.user.get(value).then((res) => {
       currentUser.value = res.userInfo!;
     });
   }
+
   // Set token function
   const setToken = async (token: string) => {
     // Set token to client
@@ -31,6 +40,7 @@ export const useHexabaseStore = defineStore("hexabase", () => {
     // Save token to local storage
     localStorage.setItem(STORAGE_KEY, token);
   };
+
   // Remove token function
   const removeToken = () => {
     // Remove token from local storage
@@ -39,6 +49,33 @@ export const useHexabaseStore = defineStore("hexabase", () => {
     login.value = false;
   };
 
+  // Add items to store
+  const setItems = (ary: any[]) => {
+    items.value = ary;
+  };
+
+  // Add an item to store
+  const addItem = (item: any) => {
+    items.value.push(item);
+  };
+
+  // Return an item by id
+  const getItem = (id: string) => {
+    return items.value.find((item) => item.i_id === id);
+  };
+
   // Expose client, login, and setToken
-  return { client, login, setToken, removeToken, currentUser };
+  return {
+    client,
+    login,
+    setToken,
+    removeToken,
+    currentUser,
+    setItems,
+    addItem,
+    getItem,
+    items,
+    projectId,
+    datastoreId,
+  };
 });

@@ -15,19 +15,21 @@ const logout = () => {
 
 <template>
   <main>
-    <el-container class="hexabase-todo">
-      <el-header>
-        <div class="title">Todo App</div>
-        <div class="toolbar" v-if="store.login">
-          <el-button @click="logout" type="primary"
-            >({{ store.currentUser?.username }}) Logout</el-button
-          >
-        </div>
-      </el-header>
-      <el-main>
-        <RouterView />
-      </el-main>
-    </el-container>
+    <suspense>
+      <el-container class="hexabase-todo">
+        <el-header>
+          <div class="title">Todo App</div>
+          <div class="toolbar" v-if="store.login">
+            <el-button @click="logout" type="primary"
+              >({{ store.currentUser?.username }}) Logout</el-button
+            >
+          </div>
+        </el-header>
+        <el-main>
+          <RouterView />
+        </el-main>
+      </el-container>
+    </suspense>
   </main>
 </template>
 
