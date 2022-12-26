@@ -55,20 +55,15 @@ const edit = (item: any) => {
       />
       <el-table-column prop="title" label="Title" width="180" />
       <el-table-column fixed="right" label="Operations" width="120">
-        <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            size="small"
-            @click.prevent="detail(scope)"
-            >Detail</el-button
+        <template v-slot:default="scope">
+          <router-link
+            :to="{ name: 'showTask', params: { id: scope.row.i_id } }"
+            >Detail</router-link
           >
-          <el-button
-            link
-            type="primary"
-            size="small"
-            @click.prevent="edit(scope.row)"
-            >Edit</el-button
+          /
+          <router-link
+            :to="{ name: 'editTask', params: { id: scope.row.i_id } }"
+            >Edit</router-link
           >
         </template>
       </el-table-column>

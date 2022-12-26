@@ -64,6 +64,24 @@ export const useHexabaseStore = defineStore("hexabase", () => {
     return items.value.find((item) => item.i_id === id);
   };
 
+  // Replace Item
+  const replaceItem = (id: string, item: any) => {
+    item.i_id = id;
+    const i = items.value.findIndex((i) => i.i_id === item.i_id);
+    if (i === -1) {
+      items.value.push(item);
+    } else {
+      items.value[i] = item;
+    }
+  };
+
+  const removeItem = (id: string) => {
+    const i = items.value.findIndex((i) => i.i_id === id);
+    if (i !== -1) {
+      items.value.splice(i, 1);
+    }
+  };
+
   // Expose client, login, and setToken
   return {
     client,
@@ -74,6 +92,8 @@ export const useHexabaseStore = defineStore("hexabase", () => {
     setItems,
     addItem,
     getItem,
+    replaceItem,
+    removeItem,
     items,
     projectId,
     datastoreId,

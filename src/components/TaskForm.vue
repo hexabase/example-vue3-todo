@@ -1,25 +1,62 @@
 <script setup lang="ts">
-import type { CreateNewItemPl } from "@hexabase/hexabase-js/dist/lib/types/item";
+import type {
+  CreateNewItemPl,
+  ItemActionParameters,
+} from "@hexabase/hexabase-js/dist/lib/types/item";
 import { reactive, ref } from "vue";
 import { useHexabaseStore } from "../stores/hexabase";
 import type { FormInstance } from "element-plus";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 
 const store = useHexabaseStore();
 const message = ref("");
 const router = useRouter();
+const route = useRoute();
 
+const id = route.params.id as string | undefined;
+if (id) {
+  const { itemDetails, error } = await store.client.item.getItemDetail(
+    store.datastoreId,
+    id,
+    store.projectId,
+    {
+      use_display_id: true,
+      return_number_value: true,
+      format: "map",
+      include_linked_items: true,
+      include_lookups: true,
+    }
+  );
+  if (error) {
+    message.value = "Failed to get item details.";
+  }
+  store.replaceItem(id, itemDetails);
+}
+
+const _getDefaultValue = (id?: string) => {
+  const defaultParams = {
+    name: "",
+    description: "",
+    deadlineDate: "",
+  };
+
+  if (!id) return defaultParams;
+
+  const item = store.getItem(id);
+  if (!item) return defaultParams;
+  return {
+    name: item.field_values.name.value,
+    description: item.field_values.description.value,
+    deadlineDate: item.field_values.deadlineDate.value,
+  };
+};
 // Form instance and inputs
 const formRef = ref<FormInstance>();
 const taskForm = reactive<{
   name: string;
   description: string;
   deadlineDate: string;
-}>({
-  name: "",
-  description: "",
-  deadlineDate: "",
-});
+}>(_getDefaultValue(id));
 
 // Submit form
 const save = (formEl: FormInstance | undefined) => {
@@ -34,6 +71,22 @@ const save = (formEl: FormInstance | undefined) => {
 };
 
 const _saveItem = async () => {
+  const { item, error } = await (id ? _updateItem() : _createItem());
+  // If save fails, show error message
+  if (error) {
+    _setMessage("Failed to create item.");
+    return;
+  } else {
+    // If save succeeds, add item to store
+    store.addItem(item!);
+    router.back();
+  }
+};
+
+const _createItem = async (): Promise<{
+  item: any;
+  error: string | undefined;
+}> => {
   // Build item parameters
   const item = {
     name: taskForm.name,
@@ -52,15 +105,34 @@ const _saveItem = async () => {
     store.datastoreId,
     params
   );
-  // If save fails, show error message
-  if (error) {
-    _setMessage("Failed to create item.");
-    return;
-  } else {
-    // If save succeeds, add item to store
-    store.addItem(itemNew!);
-    router.back();
-  }
+  return { item: itemNew, error };
+};
+
+const _updateItem = async (): Promise<{
+  item: any;
+  error: string | undefined;
+}> => {
+  const task = store.getItem(route.params.id as string);
+  // Build item parameters
+  const item = {
+    name: taskForm.name,
+    description: taskForm.description,
+    deadlineDate: new Date(taskForm.deadlineDate),
+  };
+  // Build parameters
+  const params: ItemActionParameters = {
+    item,
+    rev_no: task.rev_no,
+    use_display_id: true,
+    return_item_result: true,
+  };
+  const res = await store.client.item.update(
+    store.projectId,
+    store.datastoreId,
+    id!,
+    params
+  );
+  return { item: task, error: res.error };
 };
 
 // Show error message
@@ -69,6 +141,30 @@ const _setMessage = (str: string) => {
   setTimeout(() => {
     message.value = "";
   }, 3000);
+};
+
+// Delete item
+const remove = async () => {
+  if (!confirm("Are you sure you want to delete this item?")) return;
+  // Get parameters
+  const task = store.getItem(id!);
+  const a_id = task.item_actions.DeleteItem.a_id;
+  // Delete request
+  const { error } = await store.client.item.delete(
+    store.projectId,
+    store.datastoreId,
+    id!,
+    {
+      a_id,
+    }
+  );
+  // Handling response
+  if (error) {
+    _setMessage("Failed to delete item.");
+  } else {
+    store.removeItem(id!);
+    router.back();
+  }
 };
 </script>
 
@@ -121,6 +217,11 @@ const _setMessage = (str: string) => {
         >&nbsp;or&nbsp;
         <router-link to="/">Cancel</router-link>
       </el-form-item>
+      <div v-if="id">
+        <el-form-item>
+          <el-button type="warning" @click="remove">Delete</el-button>
+        </el-form-item>
+      </div>
     </el-form>
   </main>
 </template>
